@@ -151,91 +151,20 @@ PASSWALL_MAKEFILE="./luci-app-passwall/Makefile"
 # rm emortal.zip
 # ls emortal
 
-# ==========================================
-# 添加 ddns-go 和 luci-app-ddns-go
-# ==========================================
+echo "Cloning ddns-go and luci-app-ddns-go from sirpdboy..."
+git clone --depth 1 --branch main https://github.com/sirpdboy/luci-app-ddns-go.git temp_ddnsgo
 
-echo "Cloning ddns-go and luci-app-ddns-go from kenzok8/small-package..."
-git clone --depth 1 https://github.com/kenzok8/small-package.git temp_package
+# 复制 ddns-go 主程序（如果需要新版）
+[ -d "temp_ddnsgo/ddns-go" ] && cp -rf temp_ddnsgo/ddns-go ./ && echo "Copied ddns-go"
 
-# 查找并复制（处理可能的目录名差异）
-for dir in temp_package/ddns-go temp_package/luci-app-ddns-go temp_package/luci-app-ddnsgo; do
-    if [ -d "$dir" ]; then
-        name=$(basename "$dir")
-        cp -rf "$dir" ./${name#temp_package/}
-        echo "Copied: $dir -> ./$name"
-    fi
-done
-rm -rf temp_package
+# 复制 luci-app-ddns-go（适配 OpenWrt 25.12 SNAPSHOT 的版本）
+[ -d "temp_ddnsgo/luci-app-ddns-go" ] && cp -rf temp_ddnsgo/luci-app-ddns-go ./ && echo "Copied luci-app-ddns-go"
+[ -d "temp_ddnsgo/luci-app-ddnsgo" ] && cp -rf temp_ddnsgo/luci-app-ddnsgo ./luci-app-ddns-go && echo "Copied luci-app-ddnsgo"
 
-# 验证复制结果
-echo "=== Verifying ddns packages ==="
+rm -rf temp_ddnsgo
+
+# 验证
 ls -ld ./*ddns* 2>/dev/null || echo "WARNING: No ddns packages found"
-
-# ==========================================
-# 修复 ddns-go 启动脚本和 Makefile
-# ==========================================
-
-echo "Patching ddns-go..."
-
-# 1. 创建默认配置文件（启动脚本依赖）
-DDNSGO_FILEDIR="./ddns-go/file"
-mkdir -p "$DDNSGO_FILEDIR"
-
-cat > "$DDNSGO_FILEDIR/ddns-go-default.yaml" << 'EOF'
-ipv4:
-  enable: true
-  gettype: url
-  url: https://myip.ipip.net,https://ddns.oray.com/checkip,https://ip.3322.net,https://4.ipw.cn
-  domains:
-    - ""
-dns:
-  name: ""
-  id: ""
-  secret: ""
-EOF
-echo "Created ddns-go-default.yaml"
-
-# 2. 修改 Makefile，安装默认配置文件到 /usr/share/ddns-go/
-DDNSGO_MAKEFILE="./ddns-go/Makefile"
-if [ -f "$DDNSGO_MAKEFILE" ]; then
-    # 在 uci-defaults 安装后添加 default yaml 安装
-    sed -i '/$(INSTALL_BIN) $(CURDIR)\/file\/luci-ddns-go.uci-default/a\
-\
-\t$(INSTALL_DIR) $(1)/usr/share/ddns-go\
-\t$(INSTALL_CONF) $(CURDIR)/file/ddns-go-default.yaml $(1)/usr/share/ddns-go/ddns-go-default.yaml' "$DDNSGO_MAKEFILE"
-    echo "Patched Makefile to install default config"
-fi
-
-# 3. 修复启动脚本，添加兜底配置（防止文件不存在时启动失败）
-DDNSGO_INIT="./ddns-go/file/ddns-go.init"
-if [ -f "$DDNSGO_INIT" ]; then
-    # 备份原文件
-    cp "$DDNSGO_INIT" "$DDNSGO_INIT.bak"
-    
-    # 重写 init_yaml 函数，添加兜底逻辑
-    sed -i '/^init_yaml(){/,/^}/c\
-init_yaml(){\
-\t[ -d $CONFDIR ] || mkdir -p $CONFDIR 2>/dev/null\
-\tif [ -f /usr/share/ddns-go/ddns-go-default.yaml ]; then\
-\t\tcat /usr/share/ddns-go/ddns-go-default.yaml > $CONF\
-\telse\
-\t\tcat > $CONF << '\''EOFYAML'\''\
-ipv4:\
-  enable: true\
-  gettype: url\
-  url: https://myip.ipip.net\
-  domains:\
-    - ""\
-dns:\
-  name: ""\
-  id: ""\
-  secret: ""\
-EOFYAML\
-\tfi\
-}' "$DDNSGO_INIT"
-    echo "Patched init script with fallback config"
-fi
 
 echo "Done patching ddns-go"
 echo " "
