@@ -166,6 +166,17 @@ rm -rf temp_ddnsgo
 # 验证
 ls -ld ./*ddns* 2>/dev/null || echo "WARNING: No ddns packages found"
 
+
+# 删除内存限制
+DTS_FILE="../../target/linux/airoha/dts/an7581-bell_xg-040g-md.dts"
+
+if [ -f "$DTS_FILE" ]; then
+    echo "Patching DTS file: $DTS_FILE"
+    sed -i '/linux,usable-memory-range/s|^.*$|\t\t// &|' "$DTS_FILE"
+    grep -n "usable-memory-range" "$DTS_FILE"
+    echo "DTS patched"
+fi
+
 echo "Done patching ddns-go"
 echo " "
 echo "=========================================="
