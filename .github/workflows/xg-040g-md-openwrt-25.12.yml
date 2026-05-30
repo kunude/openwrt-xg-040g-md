@@ -58,6 +58,7 @@ jobs:
           TZ: ${{ env.TZ }}
         run: |
           sudo apt update
+          sudo apt install -y subversion
           sudo apt purge -y python3-distutils || true
           sudo apt autoremove -y
           sudo apt install -y \
@@ -128,19 +129,6 @@ jobs:
         working-directory: ./openwrt
         run: |
           ./scripts/feeds update -a
-          ./scripts/feeds install -a -f
-          
-      - name: Add kenzok8 small-package feed and install ddns-go
-        working-directory: ./openwrt
-        run: |
-          # 添加 kenzok8 的 feed 源
-          echo 'src-git smpackage https://github.com/kenzok8/small-package' >> feeds.conf.default
-          # 可选：再添加 kenzo 源解决依赖
-          echo 'src-git kenzo https://github.com/kenzok8/openwrt-packages' >> feeds.conf.default
-
-          # 更新所有 feeds（包括新添加的）
-          ./scripts/feeds update -a
-          # 安装所有包（包括刚添加的源里的包）
           ./scripts/feeds install -a -f
 
       - name: Install third-party packages (homeproxy, passwall)
