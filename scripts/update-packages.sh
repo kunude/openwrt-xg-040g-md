@@ -153,9 +153,7 @@ PASSWALL_MAKEFILE="./luci-app-passwall/Makefile"
 
 # 添加 ddns-go 和 luci-app-ddns-go
 echo "Cloning ddns-go and luci-app-ddns-go from kenzok8/small-package..."
-cd openwrt/package
-
-# 使用 git clone --depth 1 浅克隆整个仓库，再移动需要的包文件夹
+# 脚本已经在 openwrt/package/ 目录下运行，不要再 cd openwrt/package
 git clone --depth 1 https://github.com/kenzok8/small-package.git temp_package
 mv temp_package/ddns-go .
 mv temp_package/luci-app-ddns-go .
